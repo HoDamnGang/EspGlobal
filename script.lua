@@ -1,47 +1,38 @@
 --[[
-    🌟 ONIKAMI MOBILE SCRIPT 🌟
-    Funcionalidades:
-    - Interface Mobile Otimizada
-    - Auto Farm (com seleção de mobs)
-    - Auto Farm Automático (conforme nível)
-    - Kill Aura (para Katanas e Taijutsu)
-    - Teleport para NPCs
-    - Auto Pegar Respirações (Breaths)
-    - Activate All Codes
+    ONIKAMI MOBILE SCRIPT - CORRIGIDO
+    Interface otimizada para mobile com botão flutuante funcional.
 ]]
 
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
-local VirtualUser = game:GetService("VirtualUser")
 local LocalPlayer = Players.LocalPlayer
 local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 local Humanoid = Character:WaitForChild("Humanoid")
 local RootPart = Character:WaitForChild("HumanoidRootPart")
 
--- ==================== CONFIGURAÇÕES ====================
+-- Configurações
 local Settings = {
     AutoFarm = false,
-    AutoFarmMob = "NPC",  -- Nome do mob
+    AutoFarmMob = "NPC",
     AutoFarmAutomatic = false,
     KillAura = false,
-    KillAuraMode = "Katana", -- "Katana" ou "Taijutsu"
+    KillAuraMode = "Katana",
     KillAuraRange = 25,
     TeleportNPCs = false,
     AutoBreath = false,
     AutoActivateCodes = false,
 }
 
--- ==================== INTERFACE MOBILE ====================
+-- ==================== INTERFACE ====================
 local function CreateUI()
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Parent = LocalPlayer.PlayerGui
     ScreenGui.ResetOnSpawn = false
     ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    
-    -- Botão Flutuante para abrir
+
+    -- Botão flutuante para abrir/fechar
     local ToggleButton = Instance.new("TextButton")
     ToggleButton.Parent = ScreenGui
     ToggleButton.Size = UDim2.new(0.12, 0, 0.07, 0)
@@ -52,10 +43,9 @@ local function CreateUI()
     ToggleButton.TextScaled = true
     ToggleButton.Font = Enum.Font.GothamBold
     ToggleButton.BorderSizePixel = 0
-    
-    local MainVisible = false
-    
-    -- Menu Principal
+    ToggleButton.Visible = true
+
+    -- Frame principal (menu)
     local MainFrame = Instance.new("Frame")
     MainFrame.Parent = ScreenGui
     MainFrame.Size = UDim2.new(0.92, 0, 0.85, 0)
@@ -63,8 +53,8 @@ local function CreateUI()
     MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
     MainFrame.BackgroundTransparency = 0.1
     MainFrame.BorderSizePixel = 0
-    MainFrame.Visible = false
-    
+    MainFrame.Visible = false  -- começa invisível
+
     -- Título
     local Title = Instance.new("TextLabel")
     Title.Parent = MainFrame
@@ -75,7 +65,7 @@ local function CreateUI()
     Title.TextColor3 = Color3.fromRGB(255, 200, 50)
     Title.TextScaled = true
     Title.Font = Enum.Font.GothamBold
-    
+
     -- Scroll
     local Scroll = Instance.new("ScrollingFrame")
     Scroll.Parent = MainFrame
@@ -84,13 +74,13 @@ local function CreateUI()
     Scroll.BackgroundTransparency = 1
     Scroll.ScrollBarThickness = 4
     Scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-    
+
     local UIList = Instance.new("UIListLayout")
     UIList.Parent = Scroll
     UIList.SortOrder = Enum.SortOrder.LayoutOrder
     UIList.Padding = UDim.new(0, 6)
-    
-    -- Função: Botão
+
+    -- Função para criar botão normal
     local function CreateButton(text, color, callback)
         local btn = Instance.new("TextButton")
         btn.Parent = Scroll
@@ -102,19 +92,19 @@ local function CreateUI()
         btn.TextScaled = true
         btn.Font = Enum.Font.GothamBold
         btn.AutoButtonColor = false
-        
+
         btn.MouseButton1Down:Connect(callback)
         return btn
     end
-    
-    -- Função: Toggle
-    local function CreateToggle(text, setting, desc)
+
+    -- Função para criar toggle
+    local function CreateToggle(text, setting)
         local frame = Instance.new("Frame")
         frame.Parent = Scroll
         frame.Size = UDim2.new(0.94, 0, 0.07, 0)
         frame.BackgroundColor3 = Color3.fromRGB(30, 30, 50)
         frame.BorderSizePixel = 0
-        
+
         local label = Instance.new("TextLabel")
         label.Parent = frame
         label.Size = UDim2.new(0.7, 0, 1, 0)
@@ -125,7 +115,7 @@ local function CreateUI()
         label.Font = Enum.Font.Gotham
         label.TextXAlignment = Enum.TextXAlignment.Left
         label.Padding = UDim.new(0, 10)
-        
+
         local toggle = Instance.new("TextButton")
         toggle.Parent = frame
         toggle.Size = UDim2.new(0.2, 0, 0.8, 0)
@@ -136,40 +126,37 @@ local function CreateUI()
         toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
         toggle.TextScaled = true
         toggle.Font = Enum.Font.GothamBold
-        
+
         toggle.MouseButton1Down:Connect(function()
             Settings[setting] = not Settings[setting]
             toggle.Text = Settings[setting] and "ON" or "OFF"
             toggle.BackgroundColor3 = Settings[setting] and Color3.fromRGB(0, 180, 0) or Color3.fromRGB(60, 60, 100)
         end)
-        
+
         return frame
     end
-    
-    -- ===== BOTÕES =====
+
+    -- ===== BOTÕES DO MENU =====
     CreateToggle("🤖 Auto Farm", "AutoFarm")
-    
-    -- Selecionar Mob
+
     local mobBtn = CreateButton("🎯 Mob: " .. Settings.AutoFarmMob, Color3.fromRGB(30, 80, 30), function()
         local mobs = {"NPC", "Bandit", "Shinobi", "Samurai", "Dragon", "Demon", "Spirit", "Boss", "Akuma"}
         local current = table.find(mobs, Settings.AutoFarmMob) or 1
         Settings.AutoFarmMob = mobs[(current % #mobs) + 1]
         mobBtn.Text = "🎯 Mob: " .. Settings.AutoFarmMob
     end)
-    
+
     CreateToggle("⚡ Auto Farm Automático", "AutoFarmAutomatic")
     CreateToggle("🗡️ Kill Aura", "KillAura")
-    
-    -- Modo Kill Aura
+
     local kaBtn = CreateButton("⚔️ Modo: " .. Settings.KillAuraMode, Color3.fromRGB(80, 30, 30), function()
         Settings.KillAuraMode = Settings.KillAuraMode == "Katana" and "Taijutsu" or "Katana"
         kaBtn.Text = "⚔️ Modo: " .. Settings.KillAuraMode
     end)
-    
+
     CreateToggle("📡 Teleport NPCs", "TeleportNPCs")
     CreateToggle("💨 Auto Breath", "AutoBreath")
-    
-    -- Activate Codes
+
     CreateButton("🎁 Activar Todos os Códigos", Color3.fromRGB(200, 150, 0), function()
         Settings.AutoActivateCodes = true
         local codes = {"UPDATE", "RELEASE", "SUB2", "FREE", "BONUS", "RESET", "RANK", "SPINS", "RERIDE"}
@@ -181,8 +168,8 @@ local function CreateUI()
         end
         Settings.AutoActivateCodes = false
     end)
-    
-    -- Fechar
+
+    -- Botão fechar (X)
     local closeBtn = Instance.new("TextButton")
     closeBtn.Parent = MainFrame
     closeBtn.Size = UDim2.new(0.08, 0, 0.06, 0)
@@ -193,17 +180,22 @@ local function CreateUI()
     closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
     closeBtn.TextScaled = true
     closeBtn.Font = Enum.Font.GothamBold
-    
+
     closeBtn.MouseButton1Down:Connect(function()
         MainFrame.Visible = false
         ToggleButton.Visible = true
     end)
-    
-    -- Abrir/Fechar
+
+    -- ===== LÓGICA DO BOTÃO FLUTUANTE =====
     ToggleButton.MouseButton1Down:Connect(function()
+        -- Alternar visibilidade
         MainFrame.Visible = not MainFrame.Visible
         ToggleButton.Visible = not MainFrame.Visible
     end)
+
+    -- Garantir que o botão esteja visível inicialmente
+    ToggleButton.Visible = true
+    MainFrame.Visible = false
 end
 
 -- ==================== FUNÇÕES ====================
@@ -211,10 +203,8 @@ end
 -- Auto Farm
 local function AutoFarm()
     if not Settings.AutoFarm then return end
-    
     local target = nil
     local closestDist = math.huge
-    
     for _, v in pairs(Workspace:GetDescendants()) do
         if v:IsA("Model") and v:FindFirstChild("HumanoidRootPart") and v:FindFirstChild("Humanoid") then
             local name = v.Name:lower()
@@ -227,14 +217,11 @@ local function AutoFarm()
             end
         end
     end
-    
     if target then
         TweenService:Create(RootPart, TweenInfo.new(0.5), {
             CFrame = CFrame.new(target.HumanoidRootPart.Position + Vector3.new(0, 0, 3))
         }):Play()
         wait(0.3)
-        
-        -- Atacar
         local combat = Character:FindFirstChildOfClass("Tool")
         if combat then
             combat:Activate()
@@ -247,21 +234,18 @@ end
 -- Kill Aura
 local function KillAura()
     if not Settings.KillAura then return end
-    
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= LocalPlayer then
             local char = player.Character
             if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Humanoid") and char.Humanoid.Health > 0 then
                 local dist = (RootPart.Position - char.HumanoidRootPart.Position).Magnitude
                 if dist <= Settings.KillAuraRange then
-                    -- Equipar
                     local weapon = nil
                     if Settings.KillAuraMode == "Katana" then
                         weapon = Character:FindFirstChild("Katana") or Character:FindFirstChild("Dual Katana") or Character:FindFirstChild("Blade")
                     else
                         weapon = Character:FindFirstChildOfClass("Tool")
                     end
-                    
                     if weapon then
                         Humanoid:EquipTool(weapon)
                         wait(0.1)
@@ -278,7 +262,6 @@ end
 -- Teleport NPCs
 local function TeleportNPCs()
     if not Settings.TeleportNPCs then return end
-    
     for _, v in pairs(Workspace:GetDescendants()) do
         if v:IsA("Model") and v:FindFirstChild("HumanoidRootPart") and string.find(v.Name:lower(), "npc") then
             RootPart.CFrame = CFrame.new(v.HumanoidRootPart.Position + Vector3.new(0, 2, 2))
@@ -291,7 +274,6 @@ end
 -- Auto Breath
 local function AutoBreath()
     if not Settings.AutoBreath then return end
-    
     for _, v in pairs(Workspace:GetDescendants()) do
         if v:IsA("Model") and v:FindFirstChild("Handle") and string.find(v.Name:lower(), "breath") then
             local dist = (RootPart.Position - v.Handle.Position).Magnitude
@@ -309,7 +291,6 @@ end
 -- Auto Farm Automático
 local function AutoFarmAutomatic()
     if not Settings.AutoFarmAutomatic then return end
-    
     local level = LocalPlayer.Data.Level.Value
     local mobs = {
         [0] = "NPC",
@@ -321,29 +302,24 @@ local function AutoFarmAutomatic()
         [350] = "Spirit",
         [500] = "Boss"
     }
-    
     local best = "NPC"
     for lvl, mob in pairs(mobs) do
-        if level >= lvl then
-            best = mob
-        end
+        if level >= lvl then best = mob end
     end
-    
     if best ~= Settings.AutoFarmMob then
         Settings.AutoFarmMob = best
     end
 end
 
--- ==================== LOOP ====================
+-- ==================== LOOP PRINCIPAL ====================
 spawn(function()
     while wait(0.3) do
         pcall(function()
             Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
             Humanoid = Character:FindFirstChildOfClass("Humanoid")
             RootPart = Character:FindFirstChild("HumanoidRootPart")
-            
             if not (Humanoid and RootPart) then return end
-            
+
             if Settings.AutoFarm then AutoFarm() end
             if Settings.KillAura then KillAura() end
             if Settings.TeleportNPCs then TeleportNPCs() end
